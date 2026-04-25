@@ -14,7 +14,6 @@ import {
   firstGameDate,
   getLastGameDate,
   isValidGameDate,
-  periodInDays,
 } from '../../lib/words'
 import { BaseModal } from './BaseModal'
 
@@ -46,14 +45,6 @@ export const DatePickerModal = ({
   registerLocale('locale', DATE_LOCALE)
 
   const excludedDates: Date[] = []
-  if (periodInDays > 1) {
-    let date = firstGameDate
-    for (date = firstGameDate; date < getToday(); date = addDays(date, 1)) {
-      if (!isValidGameDate(date)) {
-        excludedDates.push(date)
-      }
-    }
-  }
 
   return (
     <BaseModal

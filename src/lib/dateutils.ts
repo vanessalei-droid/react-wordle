@@ -1,4 +1,9 @@
-import { startOfToday, startOfYesterday } from 'date-fns'
+const PERIOD_MS = 5 * 60 * 1000
 
-export const getToday = () => startOfToday()
-export const getYesterday = () => startOfYesterday()
+const floorToPeriod = (date = new Date()) =>
+  new Date(Math.floor(date.getTime() / PERIOD_MS) * PERIOD_MS)
+
+export const getToday = () => floorToPeriod()
+
+// Only used for archived-game navigation; keeping the name avoids wider changes.
+export const getYesterday = () => new Date(getToday().getTime() - PERIOD_MS)

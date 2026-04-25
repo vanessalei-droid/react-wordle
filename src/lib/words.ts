@@ -1,10 +1,4 @@
-import {
-  addDays,
-  differenceInDays,
-  formatISO,
-  parseISO,
-  startOfDay,
-} from 'date-fns'
+import { formatISO, parseISO } from 'date-fns'
 import { default as GraphemeSplitter } from 'grapheme-splitter'
 import queryString from 'query-string'
 
@@ -16,8 +10,9 @@ import { getToday } from './dateutils'
 import { getGuessStatuses } from './statuses'
 
 // 1 January 2022 Game Epoch
-export const firstGameDate = new Date(2022, 0)
-export const periodInDays = 1
+export const firstGameDate = new Date(2022, 0, 1, 0, 0, 0, 0)
+export const periodInMinutes = 5
+export const periodInMs = periodInMinutes * 60 * 1000
 
 export const isWordInWordList = (word: string) => {
   return (
@@ -90,32 +85,34 @@ export const localeAwareUpperCase = (text: string) => {
 }
 
 export const getLastGameDate = (today: Date) => {
-  const t = startOfDay(today)
-  let daysSinceLastGame = differenceInDays(firstGameDate, t) % periodInDays
-  return addDays(t, -daysSinceLastGame)
+  const elapsed = Math.max(0, today.getTime() - firstGameDate.getTime())
+  const periodsSinceEpoch = Math.floor(elapsed / periodInMs)
+  return new Date(firstGameDate.getTime() + periodsSinceEpoch * periodInMs)
 }
 
 export const getNextGameDate = (today: Date) => {
-  return addDays(getLastGameDate(today), periodInDays)
+  return new Date(getLastGameDate(today).getTime() + periodInMs)
 }
 
 export const isValidGameDate = (date: Date) => {
-  if (date < firstGameDate || date > getToday()) {
+  const time = date.getTime()
+  const start = firstGameDate.getTime()
+  const now = getToday().getTime()
+
+  if (time < start || time > now) {
     return false
   }
 
-  return differenceInDays(firstGameDate, date) % periodInDays === 0
+  return (time - start) % periodInMs === 0
 }
 
 export const getIndex = (gameDate: Date) => {
-  let start = firstGameDate
-  let index = -1
-  do {
-    index++
-    start = addDays(start, periodInDays)
-  } while (start <= gameDate)
+  const diff = gameDate.getTime() - firstGameDate.getTime()
+  if (diff < 0) {
+    throw new Error('Invalid game date')
+  }
 
-  return index
+  return Math.floor(diff / periodInMs)
 }
 
 export const getWordOfDay = (index: number) => {
@@ -145,7 +142,7 @@ export const getGameDate = () => {
 
   const parsed = queryString.parse(window.location.search)
   try {
-    const d = startOfDay(parseISO(parsed.d!.toString()))
+    const d = parseISO(parsed.d!.toString())
     if (d >= getToday() || d < firstGameDate) {
       setGameDate(getToday())
     }
@@ -159,7 +156,7 @@ export const getGameDate = () => {
 export const setGameDate = (d: Date) => {
   try {
     if (d < getToday()) {
-      window.location.href = '/?d=' + formatISO(d, { representation: 'date' })
+      window.location.href = '/?d=' + d.toISOString()
       return
     }
   } catch (e) {
