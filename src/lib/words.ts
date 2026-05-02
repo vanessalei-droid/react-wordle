@@ -1,4 +1,4 @@
-import { formatISO, parseISO } from 'date-fns'
+import { parseISO } from 'date-fns'
 import { default as GraphemeSplitter } from 'grapheme-splitter'
 import queryString from 'query-string'
 
